@@ -222,3 +222,27 @@ resource "aws_glue_catalog_database" "dataset" {
   name = var.glue_database_name
 }
 ```
+
+## In summary
+
+Terraform gives us flexibility to say what resources we'd like to create through infrastructure as code.
+
+Through each step of your `main.tf` set up, you can preview your configuration by running `terraform plan` in your terminal:
+
+```
+terraform plan
+```
+
+Once you're ready, you can deploy with
+
+```
+terraform apply
+```
+
+(There will be a prompt for you to say `yes`).
+
+You can clean up with (since this is a development exercise)
+
+```
+terraform destroy
+```
