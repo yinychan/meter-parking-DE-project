@@ -32,14 +32,9 @@ terraform --version
 2. Username: terraform-runner
     - Provide user access to the AWS Management Console - optional (leave unchecked)
     - Next
-3. Role Mapping (GCP → AWS)
-GCP Role            AWS Equivalent                                          Purpose
-Storage Admin       AmazonS3FullAccess                                      Allows Terraform to create, modify, and delete S3 Buckets (Data Lakes).
-BigQuery Admin      AWSGlueConsoleFullAccess and AmazonAthenaFullAccess     Allows Terraform to build the metadata catalogs, databases, and query infrastructure.
-Compute Admin       AmazonEC2FullAccess                                     Allows Terraform to spin up, manage, and destroy virtual machine instances (EC2).
-4. Set permissions > Permissions options > select Attach policies directly
-5. Permissions policies + AmazonS3FullAccess, + AWSGlueConsoleFullAccess, + AmazonAthenaFullAccess, + AmazonEC2FullAccess
-6. Next > Review > Create user
+3. Set permissions > Permissions options > select Attach policies directly
+4. Permissions policies (add) + AmazonS3FullAccess, + AWSGlueConsoleFullAccess, + AmazonAthenaFullAccess, + AmazonEC2FullAccess
+5. Next > Review > Create user
 
 ### Generate an Access Key Pair
 1. Click on `terraform-runner` from your user list to open its settings.
@@ -246,3 +241,7 @@ You can clean up with (since this is a development exercise)
 ```
 terraform destroy
 ```
+
+## Back to main
+
+Excellent, you can [continue back at the main project](../README.md).
