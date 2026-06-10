@@ -1,3 +1,13 @@
+## Terraform Contents
+
+- [Getting Started with AWS](#getting-started-with-aws)
+- [Infrastructure as Code (IaC) with Terraform](#infrastructure-as-code-iac-with-terraform)
+- [Adding terraform to your current codepsaces session:](#adding-terraform-to-your-current-codepsaces-session)
+- [Connecting AWS with Terraform using variables](#connecting-aws-with-terraform-using-variables)
+  - [IAM users](#iam-users)
+  - [Generate an Access Key Pair](#generate-an-access-key-pair)
+  - [Creating Terraform Configuration Files](#creating-terraform-configuration-files)
+- [In summary](#in-summary)
 
 ## Getting Started with AWS
 The starting point assumes you already have an AWS account. If not, create one.

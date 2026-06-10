@@ -319,3 +319,7 @@ SELECT * FROM meter_occupancy LIMIT 10;
 ```
 
 Great! Our Airflow and DAG work, next, we take it into AWS.
+
+## Back to main
+
+Excellent, you can [continue back at the main project](../README.md).

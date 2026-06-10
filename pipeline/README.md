@@ -1,6 +1,17 @@
 ## Data Ingestion
 
-We will be using LA City's Open Data. Sign Up and generate their API Token:
+We will be using LA City's Open Data. 
+
+## Contents
+
+- [The Datasets](#the-datasets)
+- [Extract the data](#extract-the-data)
+- [Connect to Database](#connect-to-database)
+- [Insert the Data](#insert-the-data)
+
+### The Datasets
+
+Sign Up and generate their API Token:
 https://data.lacity.org/login. Enter it as your `APP_TOKEN` value in your `.env`.
 
 We will be handling 3 datasets
