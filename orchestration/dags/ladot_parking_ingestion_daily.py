@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta
 from airflow.decorators import dag, task
-
 import requests
 import os
 import pandas as pd
 from io import StringIO
 from sqlalchemy import create_engine
-from tqdm.auto import tqdm
 
 @dag(
     dag_id="ladot_parking_ingestion_daily",
@@ -48,15 +46,6 @@ def ladot_parking_ingestion_daily():
         meter_occupancy_response = requests.post(meter_occupancy_csv, headers=headers, json=payload_csv, timeout=100)
         meter_occupancy_response.raise_for_status() # Check if the request was successful
 
-        #3. put response data into dataframe
-        # df = pd.read_csv(StringIO(meter_occupancy_response.text))
-
-        #4. Let's make sure we have the data we expect
-        # print(df.head())
-        # print(df.dtypes)
-        # print(df.shape)
-        # print(df.columns)
-
         #5. connect to the database
         psql_user = os.getenv("POSTGRES_USER")
         psql_password = os.getenv("POSTGRES_PASSWORD")
@@ -77,7 +66,7 @@ def ladot_parking_ingestion_daily():
 
         first = True
 
-        for df_chunk in tqdm(df_iterable):
+        for df_chunk in df_iterable:
 
             if first:
                 # Create table schema (no data)

@@ -224,8 +224,10 @@ __marimo__/
 .DS_Store
 .env
 .env.*
+*/.env
 !.env.example
 *.csv
+/orchestration/logs/*
 
 # Terraform
 .terraform/

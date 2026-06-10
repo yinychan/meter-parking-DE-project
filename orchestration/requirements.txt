@@ -1,2 +1,5 @@
 # AWS Provider 
 apache-airflow-providers-amazon
+
+# Core Database Driver required by SQLAlchemy to connect to Postgres 18
+psycopg2-binary

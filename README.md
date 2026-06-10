@@ -294,7 +294,7 @@ This project is in progress. Here is what to expect in the coming days and weeks
 - Set up a pgAdmin to make data inspection easier
 - ~~Infrastructure-as-Code using Terraform~~
 - ~~Workflow orchestration with Apache Airflow~~
-- Write a DAG with Airflow
+- ~~Write a DAG with Airflow~~
 - Alternate Workflow orchestration with Kestra
 - Data warehouse on AWS
 - Analytics engineering with dbtCloud

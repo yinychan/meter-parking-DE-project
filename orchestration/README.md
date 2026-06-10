@@ -1,5 +1,15 @@
 ## Date Workflow Orchestration
-We will be setting up Apache Airflow using Docker and working with AWS. Airflow acts as a "centralized control room" for our data engineering pipelines. Instead of running Python extraction scripts on a manual timer or using a cron job, Airflow orchestrates the entire data workflow.
+We will be setting up Apache Airflow using Docker and working with AWS. Airflow acts as a "centralized control room" for our data engineering pipelines. Instead of running Python extraction scripts on a manual timer or using a cron job, Airflow orchestrates the entire data workflow. 
+
+This setup works with Apache Airflow 3.2.2. If you are using a different Airflow version, especially from Apache 2.x, there will be a number of differences in your docker-compose.yml.  
+
+Specifically, pay attention to whether you need `AIRFLOW__CORE__EXECUTOR` to equal `LocalExecutor`, `CeleryExecutor`, or other. If using `LocalExecutor`, you'll need to ensure you have these configs in your `docker-compose.yml` with the corresponding values in your `.env`:
+
+```
+AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-airflow_jwt_secret}
+AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+```
 
 ### Getting Started
 Create an `orchestration` folder in your project.
@@ -52,6 +62,10 @@ In your `requirements.txt` file, we list all the external Python libraries and p
 ```
 # AWS Provider 
 apache-airflow-providers-amazon
+
+# We'll need this later for out ingestion script
+# Core Database Driver required by SQLAlchemy to connect to Postgres 18
+psycopg2-binary
 ```
 
 ### Docker Compose for Airflow
@@ -83,14 +97,29 @@ POSTGRES_DB= # come up with one relating to your project
 AIRFLOW__CORE__FERNET_KEY= # follow the next set of instructions
 AWS_ACCESS_KEY_ID= # from the same .csv created in the terraform exercise
 AWS_SECRET_ACCESS_KEY= # from the same .csv created in the terraform exercise
+APP_TOKEN= # generated from https://data.lacity.org/profile/edit/developer_settings
+AIRFLOW__API_AUTH__JWT_SECRET= # run in your terminal: python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
-
 For your convenience, here's the link to [Generate an Access Key Pair](../terraform/README.md) in the Terraform exercise where you generated an `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
 
-To generate your own Fernet key, run this in your terminal:
+To generate your own Fernet key `AIRFLOW__CORE__FERNET_KEY`, run this in your terminal:
 
 ```
 uv run --with cryptography python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Make sure you add your APP_TOKEN from the pipeline exercise, or [generate their API Token](../pipeline/README.md) to enter the `APP_TOKEN` value in your `.env` for this exercise.
+
+```
+# In /project/orchestration/.env, switch out the value for your actual token
+
+APP_TOKEN=app_token_from_https://data.lacity.org/profile/edit/developer_settings
+```
+
+Generate an `AIRFLOW__API_AUTH__JWT_SECRET` value by running the following in your terminal and then copy/paste the generated secret:
+
+```
+python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 ### Build Docker Image with Airflow
@@ -167,7 +196,7 @@ def ladot_parking_ingestion_daily():
         ...
 ```
 
-Import our pipeline tools at the top of the file
+Import our pipeline tools at the top of the file. Notice I removed `tqdm` from this script (to reduce complications when doing this test run of Airflow). Also removed the `tqdm` method call around Line 79.
 
 ```
 # In ladot_parking_ingestion_daily.py
@@ -177,7 +206,6 @@ import os
 import pandas as pd
 from io import StringIO
 from sqlalchemy import create_engine
-from tqdm.auto import tqdm
 ```
 
 Note that we'll need to default our db host to `postgres` since we'll be running in Docker. 
@@ -188,15 +216,27 @@ Note that we'll need to default our db host to `postgres` since we'll be running
 psql_host = os.getenv("POSTGRES_HOST", "postgres")
 ```
 
-Make sure you add your APP_TOKEN from the pipeline exercise, or [generate their API Token](../pipeline/README.md) to enter the `APP_TOKEN` value in your `.env` for this exercise.
+And make sure `APP_TOKEN` is in your `docker-compose.yml` environment variables:
 
 ```
-# In /project/orchestration/.env, switch out the value for your actual token
-
-APP_TOKEN=app_token_from_https://data.lacity.org/profile/edit/developer_settings
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment:
+    ...
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-airflow_jwt_secret}
+    AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+    ...
+    APP_TOKEN: ${APP_TOKEN}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: ${POSTGRES_DB}
+    ...
 ```
 
-4. Let's give it a go. Instantiate the execution and call the main entrypoint function
+4. Instantiate the execution and call the main entrypoint function
 
 ```
     # Instantiate the task(s)
@@ -206,7 +246,7 @@ APP_TOKEN=app_token_from_https://data.lacity.org/profile/edit/developer_settings
 ladot_dag = ladot_parking_ingestion_daily()
 ```
 
-5. Since we've updated the `.env` file, we'll ned to bring Docker down then back up again
+5. Let's give it a go. Since we've updated the `.env` file, we'll ned to bring Docker down then back up again
 
 ```
 docker compose down -v
@@ -215,16 +255,55 @@ docker compose up airflow-init
 docker compose up
 ```
 
-6. Helpful Airflow commands:
+Reload your local Airflow dashboar `localhost:8080` and enter your preset username / password: airflow / airflow.
+
+If you don't see your DAG in the dashboard, you can manually rescan for it:
 
 ```
-# Force an immediate rescan (force the running scheduler to process newly fixed code in your dag file)
 docker compose exec airflow-scheduler airflow dags reserialize
+```
 
+You should see your DAG `ladot_parking_ingestion_daily` listed on your dash but with the trigger toggle disabled (this is default). Manually start your dag by clicking the `>` play.
+
+
+6. Airflow commands:
+
+You can run this command to show a list of dags in service
+
+```
 # List all the dags
 docker compose exec airflow-scheduler airflow dags list
 ```
 
+If your dag hasn't shown up yet, run this command to have your dag instantly show up in your dashboard without waiting.
+
+```
+# Force an immediate rescan (force the running scheduler to process newly fixed code in your dag file)
+docker compose exec airflow-scheduler airflow dags reserialize
+```
+
 #### DAG in Airflow Dashboard
 
-Success here means you can see your DAG within your localhost:8080 Airflow Dashboard
+Success here means you can see your DAG within your `localhost:8080/dags` Airflow Dashboard (select the All tab).
+
+### Running your DAG
+
+You'll notice your DAG's auto-trigger toggle is in the "off" position. You can turn it on for it to run on the next scheduled time. But since we are simply running an example exercise, you can manually trigger the dag to test that it works. Click on the `>` play button to get it going. Select "Single Run" and have it start immediately.
+
+Success here will quite literally show a green "success" checkmark ✅. You should also be able to see the `print()` outputs in your DAG's task logs within Airflow dashboard.
+
+Let's check the database. In a new terminal tab:
+
+```
+ls
+cd orchestration # if necessary
+# make sure you're in the /your-project/orchestration directory first
+
+docker compose exec postgres psql -U airflow -d la_meter_parking_db_airflow
+
+# You should be in psql now, something like your__db_airflow=#
+
+SELECT * FROM meter_occupancy LIMIT 10;
+```
+
+Great! Our Airflow and DAG work, next, we take it into AWS.

@@ -11,10 +11,21 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW_HOME: /opt/airflow
+
+    # We need these for the DAGs to be able to call the Task API when running in LocalExecutor mode, since the API server is running in a separate container
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-airflow_jwt_secret}
+    AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
+
     # Injects your AWS keys directly into the global container environment
     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
     AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+
+    APP_TOKEN: ${APP_TOKEN}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: ${POSTGRES_DB}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -22,7 +33,7 @@ x-airflow-common: &airflow-common
   depends_on:
     postgres:
       condition: service_healthy
-  user: "${AIRFLOW_UID}:${AIRFLOW_GID}"
+  user: "${AIRFLOW_UID:-50000}:0"
 
 services:
   postgres:
