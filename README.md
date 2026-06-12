@@ -1,5 +1,7 @@
-# LA Meter Parking Occupancy and Citations
-This is a data engineering project using meter parking occupancy and citations from LADOT Open Data. I will go through the step-by-step process of building an end-to-end data pipeline, starting from configuring an efficient workflow. This is as much for me to integrate what I've learned with what I know as it is to be a helpful resource. Instructions are for macOS. This is a data engineering exercise with AWS.
+# LA Parking Intelligence Pipeline
+This is a data engineering pipeline that analyzes LADOT meter parking occupancy, citations, and inventory from LADOT Open Data. It reveals where open metered parking and which spaces have a higher likelihood of enforcement.
+
+I provide the step-by-step process of building an end-to-end data pipeline, starting from configuring an efficient workflow. The full implementation stack includes AWS Glue, AWS S3, Apache Airflow 3.2.x, Terraform, Socrata API, Python, SQL, Docker, Codespaces, VS Code. Instructions are written for macOS. 
 
 # Contents 
 
