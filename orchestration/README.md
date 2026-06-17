@@ -723,7 +723,12 @@ A couple measures of success here:
 
 ### AWS Glue Crawler
 
-Coming up next!
+1. Import `GlueCrawlerOperator` to your DAG.
+
+```
+# Top of ladot_parking_ingestion_daily.py
+from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
+```
 
 ## Back to main
 

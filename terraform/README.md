@@ -270,6 +270,87 @@ resource "aws_glue_catalog_database" "dataset" {
 }
 ```
 
+We also need to set up an IAM role for AWS Glue Crawler (which we later run in our workflow orchestration DAG).
+
+```
+
+resource "aws_iam_role" "glue_crawler_role" {
+  name = "ladot_parking_glue_crawler_role"
+
+  # Standard configs
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "://amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+```
+
+Attach the AWS managed service policy for `AWSGlueServiceRole`. It "allows access to related services including EC2, S3, and Cloudwatch Logs".
+
+Where it says `glue_service` is your name for the role policy
+
+```
+resource "aws_iam_role_policy_attachment" "glue_service" {
+  role = aws_iam_role.glue_crawler_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+}
+```
+
+Attach your custom policy:
+
+```
+resource "aws_iam_role_policy" "glue_s3_access_policy" {
+  name = "ladot_parking_glue_s3_access"
+  role = aws_iam_role.glue_crawler_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.data_lake_bucket.arn,
+          "${aws_s3_bucket.data_lake_bucket.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+```
+
+Create your Glue Crawler. Where it says `parking_metrics_crawler` will be your custom name for this crawler. You'll need to pass that in to the `GlueCrawlerOperator` within [your DAG](/orchestration/README.md#aws-glue-crawler).
+
+```
+resource "aws_glue_crawler" "parking_metrics_crawler" {
+  database_name = aws_glue_catalog_database.dataset.name
+  name = "ladot_parking_metrics_crawler"
+  role = aws_iam_role.glue_crawler_role.name
+
+  s3_target {
+    path = "s3://${aws_s3_bucket.data_lake_bucket.bucket}"
+  }
+
+  schema_change_policy {
+    delete_behavior = "LOG"
+    update_behavior = "UPDATE_IN_DATABASE"
+  }
+}
+```
+
 ## In summary
 
 Terraform gives us flexibility to say what resources we'd like to create through infrastructure as code.

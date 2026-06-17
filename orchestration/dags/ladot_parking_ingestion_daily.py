@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from airflow.decorators import dag, task
+from airflow.providers.amazon.aws.operators.glue_crawler import GlueCrawlerOperator
 import requests
 import os
 import pandas as pd
@@ -56,6 +57,10 @@ class IngestionEngine:
 
 
     def _upload_chunk_to_s3(self, records: list, timestamp: str, chunk_idx: int):
+        # we don't want to run old chunks, for dev purposes
+        if chunk_idx < 642:
+            print(chunk_idx)
+            return
         
         s3_filename = f"{self.dataset_name}/run_{timestamp}_chunk_{chunk_idx:05d}.parquet"
 
@@ -135,13 +140,19 @@ def ladot_parking_ingestion_daily():
         )
         engine.extract_and_load_data()
 
+    trigger_aws_glue_crawler = GlueCrawlerOperator(
+        task_id="trigger_aws_glue_crawler",
+        crawler_name="ladot_parking_metrics_crawler",
+        aws_conn_id="aws_default"
+    )
+
     # Instantiate the task(s)
     run_meter_occupancy_data = extract_and_load_meter_occupancy_data()
     run_parking_citations_data = extract_and_load_parking_citations_data()
     run_parking_inventory_policies_data = extract_and_load_parking_inventory_policies_data()
 
     # Airflow will automatically set these tasks to run one after the other
-    run_meter_occupancy_data >> run_parking_inventory_policies_data >> run_parking_citations_data
+    run_meter_occupancy_data >> run_parking_inventory_policies_data >> run_parking_citations_data >> trigger_aws_glue_crawler
     # [run_meter_occupancy_data, run_parking_citations_data, run_parking_inventory_policies_data] # run in parallel
 
 # Instantiate DAG
