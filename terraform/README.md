@@ -21,6 +21,7 @@ Infrastructure as Code is the practice of provisioning, managing, and updating y
 With that in mind, lets get started.
 
 ## Getting Started with AWS
+
 The starting point assumes you already have an AWS account. If not, create one.
 
 - [Terraform with AWS official provider docs](https://registry.terraform.io/providers/hashicorp/aws/latest){:target="_blank" class="external"}

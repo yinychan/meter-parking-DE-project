@@ -1,5 +1,7 @@
-## Date Workflow Orchestration
+## Data Workflow Orchestration
 We will be setting up Apache Airflow using Docker and working with AWS. Airflow acts as a "centralized control room" for our data engineering pipelines. Instead of running Python extraction scripts on a manual timer or using a cron job, Airflow orchestrates the entire data workflow. 
+
+What we'll be accomplishing here in workflow orchestration: extracting raw data from Socrata API, handling memory boundaries, compressing extracted data to Parquet, loading in cloud data lake, and building a Glue structural metadata catalog.
 
 ## Contents
 
@@ -18,7 +20,7 @@ We will be setting up Apache Airflow using Docker and working with AWS. Airflow 
     - [Together with Terraform](#together-with-terraform)
     - [Extract & Load All Datasets](#extract--load-all-datasets)
         - [Using Socrata API](#using-socrata-api)
-    - [AWS Glue Crawler](#aws-glue-crawler) (coming up next)
+    - [AWS Glue Crawler](#aws-glue-crawler)
 
 ## Airflow & DAGs
 
@@ -753,6 +755,8 @@ trigger_aws_glue_crawler = GlueCrawlerOperator(
 # Around Line 155
 run_meter_occupancy_data >> run_parking_inventory_policies_data >> run_parking_citations_data >> trigger_aws_glue_crawler
 ```
+
+Yin's TODO: Separate backfill tasks from daily tasks
 
 #### Completed Extract and Load
 

@@ -21,6 +21,7 @@ I provide the step-by-step process of building an end-to-end data pipeline, star
   - [Clean up](#clean-up)
 - [Setting up AWS and Terraform](#setting-up-aws-and-terraform) (This als goes to its own README)
 - [Workflow Orchestration with Apache Airflow 3.2.x](#workflow-orchestration-with-apache-airflow-32) (This goes to its own README)
+- [Data Warehouse on Snowflake](#data-warehouse-on-snowflake)
 - [Coming up](#coming-up) (All my plans for demonstrating this pipeline)
 
 
@@ -293,10 +294,12 @@ docker rmi $(docker images -a -q) # deletes all images. add -f to force
 # Volumes
 docker volume ls
 docker volume rm <volume_name>
+docker volume prune -af
 
 # Networks
 docker network ls
 docker network rm <network_id>
+docker network prune
 ```
 
 ## Setting up AWS and Terraform
@@ -306,8 +309,6 @@ This section is in the /terraform file directory. It has everything we need to c
 
 ## Workflow Orchestration with Apache Airflow 3.2
 Here, we go through the entire data workflow starting from getting up and running with Airflow in Docker, writing Airflow tasks with DAGs, data ingestion with the Socrata API, chunking our data, shipping our data off into AWS S3 (Data Lake), and creating an AWS Glue Crawler to get our Parquet data into our AWS Glue Data Catalog database. After which, we can move into actually doing something with our data in Analytics Engineering.
-<!-- Data workflow is also called Directed Acyclic Graph (DAG).
-An example of a data workflow is Data ingestion > Convert various data formats into Apache Parquet > Upload to AWS S3 -->
 
 This is a pretty extensive and meaty section, so I will link to each part of this exercise:
 
@@ -326,16 +327,35 @@ This is a pretty extensive and meaty section, so I will link to each part of thi
     - [Together with Terraform](orchestration/README.md#together-with-terraform)
     - [Extract & Load All Datasets](orchestration/README.md#extract--load-all-datasets)
         - [Using Socrata API](orchestration/README.md#using-socrata-api)
-    - [AWS Glue Crawler](orchestration/README.md#aws-glue-crawler) (coming up next)
+    - [AWS Glue Crawler](orchestration/README.md#aws-glue-crawler)
+
+
+## Data Warehouse on Snowflake
+We configure our data warehouse infrastructure with Snowflake, staged to connect directly with our AWS S3 data lake. Snowflake allows us to decouple compute from storage and scale our query processing without the cost of increasing storage or leaving servers constantly running.
+ 
+- [Concepts & Definitions](/warehouse/README.md#concepts--definitions)
+    - [Database Systems](/warehouse/README.md#database-systems)
+        - [Online Transactional Processing (OLTP)](/warehouse/README.md#online-transactional-processing-oltp)
+        - [Online Analytical Processing (OLAP)](/warehouse/README.md#online-analytical-processing-olap)
+    - [Staging Tables](/warehouse/README.md#staging-tables)
+    - [Data Normalization](/warehouse/README.md#data-normalization)
+    - [Data Denormalization](/warehouse/README.md#data-denormalization)
+        - [Fact Tables](/warehouse/README.md#fact-tables)
+        - [Dimension Tables](/warehouse/README.md#dimension-tables)
+        - [Star Schema](/warehouse/README.md#star-schema)
+- [Snowflake Architecture](/warehouse/README.md#snowflake-architecture)
+    - [Secure Cloud Authentication](/warehouse/README.md#secure-cloud-authentication)
+
+## Next up: Batch Processing and Analytics Engineering
+We will implement batch processing and analytics engineering with Apache Spark. Because of the raw public data we pulled from LADOT's API via Socrata, our data was extracted into Parquet files as standard text strings. We will run a local environment of Spark to read the Parquet files and re-type the fields into their original datatypes of numbers and dates.
 
 ## Coming up
 This project is in progress. Here is what to expect in the coming days and weeks:
 - ~~Infrastructure-as-Code using Terraform~~
 - ~~Workflow orchestration with Apache Airflow~~
 - ~~Write a DAG with Airflow~~
-- Data warehouse on AWS
-- Alternate Workflow orchestration with Kestra
-- Analytics engineering with dbtCloud
+- ~~Data warehouse on Snowflake~~
+- Analytics engineering with Apache Spark and PySpark
 - Batch processing with Apache Spark and PySpark
-- Building a streaming pipeline (separately)
-- Set up a pgAdmin to make data inspection easier
+- Modeling with Star Schema
+- Data Analytics & Machine Learning

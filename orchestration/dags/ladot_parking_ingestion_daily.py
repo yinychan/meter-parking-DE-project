@@ -41,14 +41,11 @@ class IngestionEngine:
                     self.dataset_id, 
                     limit=chunk_size,
                     offset=offset,
-                    order=":id"
+                    order=":id",
+                    where="issue_date >= '2021-01-01T00:00:00'" if self.dataset_name == "parking_citations" else None
                 )
 
                 print(f"Fetched rows {offset} to {offset + chunk_size} in {self.dataset_name}")
-                
-                ## For dev purposes, we'll only run a couple chunks
-                if i > 5:
-                    break
                 
                 if not chunked or len(chunked) == 0:
                     break
@@ -61,10 +58,6 @@ class IngestionEngine:
 
 
     def _upload_chunk_to_s3(self, records: list, timestamp: str, chunk_idx: int):
-        # we don't want to run old chunks, for dev purposes
-        if chunk_idx < 642:
-            print(chunk_idx)
-            return
         
         s3_filename = f"{self.dataset_name}/run_{timestamp}_chunk_{chunk_idx:05d}.parquet"
 
